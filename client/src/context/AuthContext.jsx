@@ -13,6 +13,11 @@ export function AuthProvider({ children }) {
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token && user) {
+            // Skip profile verification for QR access users (they don't exist in DB)
+            if (user.id === 0) {
+                setLoading(false);
+                return;
+            }
             api.get('/auth/profile')
                 .then(res => {
                     setUser(res.data);
