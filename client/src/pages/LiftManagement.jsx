@@ -323,9 +323,15 @@ export default function LiftManagement() {
                                 Tempel QR di unit lift. Teknisi scan QR lalu masukkan PIN untuk akses form.
                             </p>
                         </div>
-                        <div className="modal-footer" style={{ justifyContent: 'center' }}>
+                        <div className="modal-footer" style={{ justifyContent: 'center', flexWrap: 'wrap' }}>
                             <button className="btn btn-ghost" onClick={downloadQr}><Download size={14} /> Download PNG</button>
                             <button className="btn btn-primary" onClick={printQr}><Printer size={14} /> Print</button>
+                            {qrPin && (
+                                <button className="btn btn-success" onClick={() => {
+                                    const msg = `🔐 PIN Akses Maintenance - ${qrLift.name} (${qrLift.cabang || '-'})\n\nPIN: *${qrPin}*\n\nMasukkan PIN ini setelah scan QR di unit lift.`;
+                                    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+                                }}>Kirim PIN via WA</button>
+                            )}
                         </div>
                     </div>
                 </div>
