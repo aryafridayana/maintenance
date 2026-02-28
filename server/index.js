@@ -1,10 +1,10 @@
+// Load .env FIRST (before any other config)
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
+
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const { initializeDatabase } = require('./database');
-
-// Load .env from project root
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -16,10 +16,25 @@ if (isProduction) {
     app.set('trust proxy', 1);
 }
 
-// CORS
+// CORS — handle wildcard + credentials conflict
+const allowedOrigin = process.env.CORS_ORIGIN || (isProduction ? false : 'http://localhost:5173');
 const corsOptions = {
-    origin: process.env.CORS_ORIGIN || (isProduction ? false : 'http://localhost:5173'),
-    credentials: true,
+    origin: function (origin, callback) {
+        // Allow requests with no origin (mobile apps, curl, server-to-server)
+        if (!origin) return callback(null, true);
+        if (allowedOrigin === '*' || allowedOrigin === origin) {
+            return callback(null, true);
+        }
+        // Support comma-separated origins
+        if (typeof allowedOrigin === 'string' && allowedOrigin.includes(',')) {
+            const origins = allowedOrigin.split(',').map(o => o.trim());
+            if (origins.includes(origin)) {
+                return callback(null, true);
+            }
+        }
+        callback(new Error('Not allowed by CORS'));
+    },
+    credentials: allowedOrigin !== '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
 };
@@ -56,7 +71,13 @@ app.use('/api/auth/login', (req, res, next) => {
 });
 
 // ========== DATABASE ==========
-initializeDatabase();
+try {
+    initializeDatabase();
+    console.log('✅ Database connected successfully');
+} catch (err) {
+    console.error('❌ Database initialization failed:', err.message);
+    process.exit(1);
+}
 
 // ========== API ROUTES ==========
 app.use('/api/auth', require('./routes/auth'));
@@ -73,6 +94,11 @@ app.get('/api/health', (req, res) => {
         timestamp: new Date().toISOString(),
         uptime: Math.floor(process.uptime()) + 's'
     });
+});
+
+// API 404 handler — must be BEFORE SPA fallback
+app.all('/api/*', (req, res) => {
+    res.status(404).json({ error: 'API endpoint not found' });
 });
 
 // ========== SERVE FRONTEND (Production) ==========
@@ -97,6 +123,28 @@ app.use((err, req, res, next) => {
 });
 
 // ========== START ==========
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 LiftCare API running on port ${PORT} [${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}]`);
+    console.log(`   CORS Origin: ${allowedOrigin}`);
+    console.log(`   Credentials: ${allowedOrigin !== '*'}`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('⚠️  SIGTERM received. Shutting down gracefully...');
+    server.close(() => {
+        console.log('🛑 Server closed.');
+        process.exit(0);
+    });
+});
+
+process.on('uncaughtException', (err) => {
+    console.error('❌ Uncaught Exception:', err.message);
+    console.error(err.stack);
+    process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+    console.error('❌ Unhandled Rejection:', reason);
+    process.exit(1);
 });

@@ -1,9 +1,30 @@
 const Database = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
 const path = require('path');
+const fs = require('fs');
 
-const dbPath = path.join(__dirname, 'liftcare.db');
-const db = new Database(dbPath);
+// Use DB_PATH from env, fallback to data/liftcare.db
+const dbPath = process.env.DB_PATH
+  ? path.resolve(__dirname, process.env.DB_PATH)
+  : path.join(__dirname, 'data', 'liftcare.db');
+
+// Ensure the database directory exists
+const dbDir = path.dirname(dbPath);
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+  console.log(`📁 Created database directory: ${dbDir}`);
+}
+
+console.log(`📂 Database path: ${dbPath}`);
+
+let db;
+try {
+  db = new Database(dbPath);
+} catch (err) {
+  console.error(`❌ Failed to open database at ${dbPath}:`, err.message);
+  console.error('   Pastikan better-sqlite3 sudah di-install di VPS dengan: npm rebuild better-sqlite3');
+  throw err;
+}
 
 // Enable WAL mode for better performance
 db.pragma('journal_mode = WAL');
