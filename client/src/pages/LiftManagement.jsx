@@ -18,6 +18,8 @@ export default function LiftManagement() {
     const [qrToken, setQrToken] = useState(null);
     const [qrPin, setQrPin] = useState(null);
     const [qrLoading, setQrLoading] = useState(false);
+    const [technicians, setTechnicians] = useState([]);
+    const [selectedTechId, setSelectedTechId] = useState('');
     const toast = useToast();
 
     const fetchLifts = () => {
@@ -30,7 +32,10 @@ export default function LiftManagement() {
             .finally(() => setLoading(false));
     };
 
-    useEffect(() => { fetchLifts(); }, [filter]);
+    useEffect(() => {
+        fetchLifts();
+        api.get('/users?role=teknisi').then(res => setTechnicians(res.data.filter(u => u.role === 'teknisi' && u.active !== 0))).catch(() => { });
+    }, [filter]);
 
     const openAdd = () => {
         setEditLift(null);
@@ -326,11 +331,35 @@ export default function LiftManagement() {
                         <div className="modal-footer" style={{ justifyContent: 'center', flexWrap: 'wrap' }}>
                             <button className="btn btn-ghost" onClick={downloadQr}><Download size={14} /> Download PNG</button>
                             <button className="btn btn-primary" onClick={printQr}><Printer size={14} /> Print</button>
-                            {qrPin && (
-                                <button className="btn btn-success" onClick={() => {
-                                    const msg = `🔐 PIN Akses Maintenance - ${qrLift.name} (${qrLift.cabang || '-'})\n\nPIN: *${qrPin}*\n\nMasukkan PIN ini setelah scan QR di unit lift.`;
-                                    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
-                                }}>Kirim PIN via WA</button>
+                            {qrPin && technicians.length > 0 && (
+                                <div style={{ marginBottom: '12px', width: '100%' }}>
+                                    <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--gray-500)', display: 'block', marginBottom: '6px' }}>Kirim PIN ke Teknisi</label>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <select
+                                            className="form-select"
+                                            value={selectedTechId}
+                                            onChange={e => setSelectedTechId(e.target.value)}
+                                            style={{ flex: 1, fontSize: '13px' }}
+                                        >
+                                            <option value="">— Pilih teknisi —</option>
+                                            {technicians.map(t => (
+                                                <option key={t.id} value={t.id}>{t.name} {t.phone ? `(${t.phone})` : '(no HP)'}</option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            className="btn btn-success"
+                                            disabled={!selectedTechId}
+                                            onClick={() => {
+                                                const tech = technicians.find(t => t.id === Number(selectedTechId));
+                                                if (!tech?.phone) { toast.error('Teknisi belum punya nomor HP'); return; }
+                                                const phone = tech.phone.replace(/^0/, '62').replace(/[^0-9]/g, '');
+                                                const msg = `🔐 PIN Akses Maintenance\n${qrLift.name} (${qrLift.cabang || '-'})\n\nPIN: *${qrPin}*\n\nMasukkan PIN ini setelah scan QR di unit lift.`;
+                                                window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+                                            }}
+                                            style={{ whiteSpace: 'nowrap' }}
+                                        >Kirim via WA</button>
+                                    </div>
+                                </div>
                             )}
                         </div>
                     </div>
