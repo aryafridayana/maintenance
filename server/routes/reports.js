@@ -78,8 +78,15 @@ router.get('/', authenticateToken, (req, res) => {
         const params = [];
 
         if (req.user.role === 'teknisi') {
-            query += ' AND r.technician_id = ?';
-            params.push(req.user.id);
+            if (req.user.id === 0) {
+                // QR access user can only see reports for the lift they just scanned
+                query += ' AND r.lift_id = ? AND r.technician_id IS NULL';
+                params.push(req.user.lift_id);
+            } else {
+                // Normal technician sees their own reports
+                query += ' AND r.technician_id = ?';
+                params.push(req.user.id);
+            }
         }
 
         if (type) { query += ' AND r.type = ?'; params.push(type); }
