@@ -53,16 +53,19 @@ export default function TechnicianDashboard() {
                 </div>
                 {todaySchedules.length > 0 ? todaySchedules.map(s => (
                     <Link key={s.id} to={`/maintenance-form?schedule=${s.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                        <div className="tech-schedule-card">
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div>
-                                    <h4 style={{ fontWeight: 600, fontSize: '15px' }}>{s.lift_name}</h4>
-                                    <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '4px' }}>
-                                        <Building2 size={12} style={{ verticalAlign: '-2px' }} /> {s.cabang || '-'} &bull; {s.lift_type === 'cargo' ? 'Cargo' : 'Elevator'}
-                                    </p>
-                                </div>
-                                <ChevronRight size={20} style={{ color: 'var(--text-muted)' }} />
+                        <div style={{
+                            padding: '14px 16px',
+                            borderBottom: '1px solid var(--border-color)',
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            transition: 'background 0.15s'
+                        }}>
+                            <div>
+                                <h4 style={{ fontWeight: 600, fontSize: '15px' }}>{s.lift_name}</h4>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '4px' }}>
+                                    <Building2 size={12} style={{ verticalAlign: '-2px' }} /> {s.cabang || '-'} &bull; {s.lift_type === 'cargo' ? 'Cargo' : 'Elevator'}
+                                </p>
                             </div>
+                            <ChevronRight size={20} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
                         </div>
                     </Link>
                 )) : (
@@ -77,14 +80,25 @@ export default function TechnicianDashboard() {
                     <h3 className="card-title"><History size={16} style={{ marginRight: '8px', verticalAlign: '-3px' }} />Jadwal Mendatang</h3>
                 </div>
                 {stats?.upcomingSchedules?.length > 0 ? stats.upcomingSchedules.map(s => (
-                    <div key={s.id} className="schedule-card">
-                        <div className="schedule-date">
-                            <span className="day">{new Date(s.scheduled_date).getDate()}</span>
-                            <span className="month">{new Date(s.scheduled_date).toLocaleDateString('id-ID', { month: 'short' })}</span>
+                    <div key={s.id} style={{
+                        display: 'flex', alignItems: 'center', gap: '14px',
+                        padding: '14px 16px',
+                        borderBottom: '1px solid var(--border-color)'
+                    }}>
+                        <div style={{
+                            width: '48px', height: '48px',
+                            background: 'var(--primary-600)', borderRadius: '10px',
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                            flexShrink: 0, color: 'white'
+                        }}>
+                            <span style={{ fontSize: '18px', fontWeight: 700, lineHeight: 1 }}>{new Date(s.scheduled_date).getDate()}</span>
+                            <span style={{ fontSize: '10px', fontWeight: 500, opacity: 0.85, textTransform: 'uppercase' }}>
+                                {new Date(s.scheduled_date).toLocaleDateString('id-ID', { month: 'short' })}
+                            </span>
                         </div>
-                        <div className="schedule-info">
-                            <h4>{s.lift_name}</h4>
-                            <p>{s.cabang || '-'}</p>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <h4 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '2px' }}>{s.lift_name}</h4>
+                            <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{s.cabang || '-'}</p>
                         </div>
                     </div>
                 )) : (

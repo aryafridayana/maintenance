@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Wrench, Eye, EyeOff, LogIn, Loader2 } from 'lucide-react';
 
@@ -11,6 +11,8 @@ export default function Login() {
     const [showPassword, setShowPassword] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const redirectTo = searchParams.get('redirect');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -18,7 +20,9 @@ export default function Login() {
         setLoading(true);
         try {
             const user = await login(email, password);
-            if (user.role === 'teknisi') {
+            if (redirectTo) {
+                navigate(redirectTo);
+            } else if (user.role === 'teknisi') {
                 navigate('/tech');
             } else {
                 navigate('/dashboard');

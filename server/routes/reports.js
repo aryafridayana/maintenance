@@ -42,6 +42,7 @@ router.get('/stats', authenticateToken, (req, res) => {
       LEFT JOIN lifts l ON s.lift_id = l.id
       LEFT JOIN users u ON s.technician_id = u.id
       WHERE s.status IN ('scheduled','in_progress')
+        AND s.scheduled_date > date('now')
       ORDER BY s.scheduled_date ASC
       LIMIT 5
     `).all();

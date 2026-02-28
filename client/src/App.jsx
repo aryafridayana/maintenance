@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Sidebar from './components/Layout/Sidebar';
@@ -18,8 +18,13 @@ import TechProfile from './pages/TechProfile';
 
 function ProtectedRoute({ allowedRoles, children }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
   if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: 'var(--text-muted)' }}>Memuat...</div>;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) {
+    // Save current URL so login can redirect back
+    const redirectUrl = location.pathname + location.search;
+    return <Navigate to={`/login?redirect=${encodeURIComponent(redirectUrl)}`} replace />;
+  }
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return <Navigate to={user.role === 'teknisi' ? '/tech' : '/dashboard'} replace />;
   }

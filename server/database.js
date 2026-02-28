@@ -67,6 +67,16 @@ function initializeDatabase() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS qr_tokens (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      lift_id INTEGER REFERENCES lifts(id) ON DELETE CASCADE,
+      token TEXT UNIQUE NOT NULL,
+      created_by INTEGER REFERENCES users(id),
+      expires_at DATETIME,
+      active INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS reports (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       schedule_id INTEGER REFERENCES schedules(id),

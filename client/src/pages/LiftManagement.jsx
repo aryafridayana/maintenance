@@ -284,7 +284,7 @@ export default function LiftManagement() {
                                 {getQrUrl(qrLift.id)}
                             </div>
                             <p style={{ fontSize: '13px', color: 'var(--gray-500)', marginBottom: '16px' }}>
-                                Tempel QR code ini di unit lift. Teknisi cukup scan untuk langsung masuk form maintenance.
+                                Tempel QR di unit lift. Teknisi perlu login sekali, lalu scan QR langsung masuk form.
                             </p>
                         </div>
                         <div className="modal-footer" style={{ justifyContent: 'center' }}>
