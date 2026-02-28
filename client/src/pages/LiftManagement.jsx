@@ -15,6 +15,8 @@ export default function LiftManagement() {
     const [form, setForm] = useState({ name: '', type: 'cargo', merk: '', model: '', cabang: '', location: '', floors: '' });
     const [deleteId, setDeleteId] = useState(null);
     const [qrLift, setQrLift] = useState(null);
+    const [qrToken, setQrToken] = useState(null);
+    const [qrLoading, setQrLoading] = useState(false);
     const toast = useToast();
 
     const fetchLifts = () => {
@@ -73,9 +75,25 @@ export default function LiftManagement() {
         }
     };
 
-    const getQrUrl = (liftId) => {
+    const getQrUrl = () => {
+        if (!qrToken) return '';
         const base = window.location.origin;
-        return `${base}/maintenance-form?lift=${liftId}`;
+        return `${base}/qr/${qrToken}`;
+    };
+
+    const openQr = async (lift) => {
+        setQrLift(lift);
+        setQrToken(null);
+        setQrLoading(true);
+        try {
+            const res = await api.post('/qr/generate', { lift_id: lift.id });
+            setQrToken(res.data.token);
+        } catch (err) {
+            toast.error('Gagal generate QR token');
+            setQrLift(null);
+        } finally {
+            setQrLoading(false);
+        }
     };
 
     const downloadQr = () => {
@@ -176,7 +194,7 @@ export default function LiftManagement() {
                                 <td>{l.floors || '-'}</td>
                                 <td>
                                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                                        <button className="btn btn-sm btn-ghost" onClick={() => setQrLift(l)} title="QR Code"><QrCode size={14} /></button>
+                                        <button className="btn btn-sm btn-ghost" onClick={() => openQr(l)} title="QR Code"><QrCode size={14} /></button>
                                         <button className="btn btn-sm btn-ghost" onClick={() => openEdit(l)} title="Edit"><Pencil size={14} /></button>
                                         <button className="btn btn-sm btn-ghost" onClick={() => setDeleteId(l.id)} title="Hapus" style={{ color: 'var(--accent-danger)' }}><Trash2 size={14} /></button>
                                     </div>
@@ -262,13 +280,17 @@ export default function LiftManagement() {
                                 background: 'white', borderRadius: 'var(--radius-lg)', padding: '24px',
                                 display: 'inline-block', border: '1px solid var(--gray-200)', marginBottom: '16px'
                             }}>
-                                <QRCodeCanvas
-                                    id="qr-canvas"
-                                    value={getQrUrl(qrLift.id)}
-                                    size={220}
-                                    level="H"
-                                    includeMargin={true}
-                                />
+                                {qrLoading ? (
+                                    <div style={{ width: 220, height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>Generating...</div>
+                                ) : qrToken ? (
+                                    <QRCodeCanvas
+                                        id="qr-canvas"
+                                        value={getQrUrl()}
+                                        size={220}
+                                        level="H"
+                                        includeMargin={true}
+                                    />
+                                ) : null}
                             </div>
                             <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '4px' }}>{qrLift.name}</h3>
                             <p style={{ color: 'var(--gray-500)', fontSize: '14px', marginBottom: '4px' }}>
@@ -281,10 +303,10 @@ export default function LiftManagement() {
                                 padding: '10px', background: 'var(--gray-50)', borderRadius: 'var(--radius-md)',
                                 fontSize: '12px', color: 'var(--gray-500)', wordBreak: 'break-all', marginBottom: '16px'
                             }}>
-                                {getQrUrl(qrLift.id)}
+                                {qrLoading ? 'Generating...' : getQrUrl()}
                             </div>
                             <p style={{ fontSize: '13px', color: 'var(--gray-500)', marginBottom: '16px' }}>
-                                Tempel QR di unit lift. Teknisi perlu login sekali, lalu scan QR langsung masuk form.
+                                Tempel QR di unit lift. Teknisi scan QR langsung masuk form maintenance.
                             </p>
                         </div>
                         <div className="modal-footer" style={{ justifyContent: 'center' }}>

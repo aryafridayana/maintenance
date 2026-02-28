@@ -14,6 +14,7 @@ import UserManagement from './pages/UserManagement';
 import TechnicianDashboard from './pages/TechnicianDashboard';
 import TechSchedules from './pages/TechSchedules';
 import TechHistory from './pages/TechHistory';
+import QrAccess from './pages/QrAccess';
 import TechProfile from './pages/TechProfile';
 
 function ProtectedRoute({ allowedRoles, children }) {
@@ -98,6 +99,9 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to={user.role === 'teknisi' ? '/tech' : '/dashboard'} /> : <Login />} />
+
+      {/* Public QR Access — token validates the request */}
+      <Route path="/qr/:token" element={<QrAccess />} />
 
       {/* Maintenance Form - accessible by ALL authenticated users */}
       <Route path="/maintenance-form" element={
