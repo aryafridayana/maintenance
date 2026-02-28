@@ -129,12 +129,13 @@ router.post('/', authenticateToken, (req, res) => {
             return res.status(400).json({ error: 'Data lift, tipe, dan checklist wajib diisi' });
         }
 
+        const techId = req.user.id === 0 ? null : req.user.id;
         const result = db.prepare(`
       INSERT INTO reports (schedule_id, lift_id, technician_id, type, checklist_data,
         remarks, temperature, voltage, technician_sign, manager_sign, customer_sign)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
-            schedule_id || null, lift_id, req.user.id, type,
+            schedule_id || null, lift_id, techId, type,
             JSON.stringify(checklist_data),
             remarks || null, temperature || null, voltage || null,
             technician_sign || null, manager_sign || null, customer_sign || null
