@@ -16,6 +16,7 @@ export default function LiftManagement() {
     const [deleteId, setDeleteId] = useState(null);
     const [qrLift, setQrLift] = useState(null);
     const [qrToken, setQrToken] = useState(null);
+    const [qrPin, setQrPin] = useState(null);
     const [qrLoading, setQrLoading] = useState(false);
     const toast = useToast();
 
@@ -84,10 +85,12 @@ export default function LiftManagement() {
     const openQr = async (lift) => {
         setQrLift(lift);
         setQrToken(null);
+        setQrPin(null);
         setQrLoading(true);
         try {
             const res = await api.post('/qr/generate', { lift_id: lift.id });
             setQrToken(res.data.token);
+            setQrPin(res.data.pin);
         } catch (err) {
             toast.error('Gagal generate QR token');
             setQrLift(null);
@@ -305,8 +308,19 @@ export default function LiftManagement() {
                             }}>
                                 {qrLoading ? 'Generating...' : getQrUrl()}
                             </div>
+                            {qrPin && (
+                                <div style={{
+                                    padding: '12px 16px', background: 'var(--primary-50)',
+                                    borderRadius: '10px', marginBottom: '16px',
+                                    border: '1px solid var(--primary-100)'
+                                }}>
+                                    <p style={{ fontSize: '12px', color: 'var(--primary-600)', fontWeight: 600, marginBottom: '4px' }}>PIN AKSES</p>
+                                    <p style={{ fontSize: '28px', fontWeight: 700, letterSpacing: '8px', color: 'var(--primary-700)' }}>{qrPin}</p>
+                                    <p style={{ fontSize: '11px', color: 'var(--gray-500)', marginTop: '4px' }}>Berikan PIN ini kepada teknisi</p>
+                                </div>
+                            )}
                             <p style={{ fontSize: '13px', color: 'var(--gray-500)', marginBottom: '16px' }}>
-                                Tempel QR di unit lift. Teknisi scan QR langsung masuk form maintenance.
+                                Tempel QR di unit lift. Teknisi scan QR lalu masukkan PIN untuk akses form.
                             </p>
                         </div>
                         <div className="modal-footer" style={{ justifyContent: 'center' }}>

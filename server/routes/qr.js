@@ -6,7 +6,12 @@ const { authenticateToken, requireRole, JWT_SECRET } = require('../middleware/au
 
 const router = express.Router();
 
-// POST /api/qr/generate — Generate QR token for a lift (admin only)
+// Generate random 4-digit PIN
+function generatePin() {
+    return Math.floor(1000 + Math.random() * 9000).toString();
+}
+
+// POST /api/qr/generate — Generate QR token + PIN for a lift (admin only)
 router.post('/generate', authenticateToken, requireRole('superadmin', 'admin'), (req, res) => {
     try {
         const { lift_id } = req.body;
@@ -22,25 +27,31 @@ router.post('/generate', authenticateToken, requireRole('superadmin', 'admin'), 
         // Check if active token already exists for this lift
         const existing = db.prepare('SELECT * FROM qr_tokens WHERE lift_id = ? AND active = 1').get(lift_id);
         if (existing) {
-            return res.json({ token: existing.token, lift });
+            return res.json({ token: existing.token, pin: existing.pin, lift });
         }
 
-        // Generate new token
+        // Generate new token and PIN
         const token = crypto.randomBytes(16).toString('hex');
+        const pin = generatePin();
         db.prepare(
-            'INSERT INTO qr_tokens (lift_id, token, created_by) VALUES (?, ?, ?)'
-        ).run(lift_id, token, req.user.id);
+            'INSERT INTO qr_tokens (lift_id, token, pin, created_by) VALUES (?, ?, ?, ?)'
+        ).run(lift_id, token, pin, req.user.id);
 
-        res.status(201).json({ token, lift });
+        res.status(201).json({ token, pin, lift });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// GET /api/qr/validate/:token — Validate QR token (PUBLIC, no auth needed)
-router.get('/validate/:token', (req, res) => {
+// POST /api/qr/validate/:token — Validate QR token + PIN (PUBLIC)
+router.post('/validate/:token', (req, res) => {
     try {
         const { token } = req.params;
+        const { pin } = req.body;
+
+        if (!pin) {
+            return res.status(400).json({ error: 'PIN wajib diisi' });
+        }
 
         const qrToken = db.prepare(`
             SELECT qt.*, l.name as lift_name, l.type as lift_type, l.merk, l.model,
@@ -54,12 +65,17 @@ router.get('/validate/:token', (req, res) => {
             return res.status(404).json({ error: 'QR code tidak valid atau sudah tidak aktif' });
         }
 
+        // Check PIN
+        if (qrToken.pin !== pin) {
+            return res.status(401).json({ error: 'PIN salah' });
+        }
+
         // Check expiry if set
         if (qrToken.expires_at && new Date(qrToken.expires_at) < new Date()) {
             return res.status(410).json({ error: 'QR code sudah kedaluwarsa' });
         }
 
-        // Generate a temporary JWT for this session (limited permissions)
+        // Generate a temporary JWT
         const tempToken = jwt.sign(
             {
                 id: 0,

@@ -71,6 +71,7 @@ function initializeDatabase() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       lift_id INTEGER REFERENCES lifts(id) ON DELETE CASCADE,
       token TEXT UNIQUE NOT NULL,
+      pin TEXT NOT NULL,
       created_by INTEGER REFERENCES users(id),
       expires_at DATETIME,
       active INTEGER DEFAULT 1,
@@ -99,6 +100,17 @@ function initializeDatabase() {
   if (userCount.count === 0) {
     seedDatabase();
   }
+
+  // Migration: add pin column to qr_tokens if missing
+  try {
+    const cols = db.pragma('table_info(qr_tokens)');
+    const hasPin = cols.some(c => c.name === 'pin');
+    if (!hasPin) {
+      db.exec("ALTER TABLE qr_tokens ADD COLUMN pin TEXT NOT NULL DEFAULT '0000'");
+      db.exec("DELETE FROM qr_tokens"); // Clear old tokens without real PINs
+      console.log('✅ Migration: added pin column to qr_tokens');
+    }
+  } catch (e) { /* table may not exist yet, ignore */ }
 }
 
 function seedDatabase() {
