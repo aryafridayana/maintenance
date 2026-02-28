@@ -29,8 +29,8 @@ export default function QrAccess() {
                 role: 'teknisi',
                 name: 'QR Access'
             }));
-            // Redirect to maintenance form
-            navigate(`/maintenance-form?lift=${res.data.lift.id}`);
+            // Full page redirect so AuthContext re-reads localStorage
+            window.location.href = `/maintenance-form?lift=${res.data.lift.id}`;
         } catch (err) {
             const msg = err.response?.data?.error || 'Gagal memvalidasi QR';
             setError(msg);
